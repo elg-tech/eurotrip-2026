@@ -36,17 +36,24 @@ export default function AddCityModal({ isOpen, onClose, onRefresh, destinos }: a
 
   if (!isOpen) return null;
 
-  // Lógica de Upload da Galeria
+  // Lógica de Upload da Galeria (Otimizada para iPhone)
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Se o arquivo for maior que 10MB, avisar o usuário
+    if (file.size > 10 * 1024 * 1024) {
+      alert("A imagem é muito grande. Tente uma foto menor que 10MB.");
+      return;
+    }
 
     setUploading(true);
     try {
       const url = await uploadImagem(file);
       setFormCidade({ ...formCidade, foto_url: url });
     } catch (err) {
-      alert("Erro ao subir imagem da galeria. Verifique sua conexão.");
+      console.error(err);
+      alert("Erro ao subir imagem da galeria. Verifique se o seu Preset no Cloudinary é 'Unsigned'.");
     } finally {
       setUploading(false);
     }
@@ -157,7 +164,7 @@ export default function AddCityModal({ isOpen, onClose, onRefresh, destinos }: a
             <>
               <div className="space-y-4">
                 <select className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white outline-none focus:border-sky-500" onChange={e => setFormPasseio({...formPasseio, destino_id: e.target.value})} required>
-                  <option value="" className="bg-slate-900">Selecione a Cidade...</option>
+                  <option value="" className="bg-slate-900 text-slate-400">Selecione a Cidade...</option>
                   {destinos.map((d: any) => <option key={d.id} value={d.id} className="bg-slate-900 text-white">{d.cidade}</option>)}
                 </select>
                 <input type="text" placeholder="Nome do Passeio (ex: Museu do Louvre)" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white outline-none focus:border-sky-500" onChange={e => setFormPasseio({...formPasseio, nome: e.target.value})} required />
@@ -187,7 +194,7 @@ export default function AddCityModal({ isOpen, onClose, onRefresh, destinos }: a
             </>
           )}
 
-          {/* BOTÃO DE SALVAR DINÂMICO */}
+          {/* BOTÃO DE SALVAR */}
           <button 
             type="submit" 
             disabled={loading || uploading} 
