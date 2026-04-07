@@ -6,9 +6,20 @@ export default function Passeios({ destinos, setDadosEdicao }: any) {
   const [passeios, setPasseios] = useState<any[]>([]);
   const [carregando, setCarregando] = useState(true);
 
+  // Função de vibração para feedback tátil
+  const vibrate = (type: 'light' | 'medium' | 'success' | 'error' = 'light') => {
+    if (typeof window !== 'undefined' && window.navigator.vibrate) {
+      switch (type) {
+        case 'light': window.navigator.vibrate(10); break;
+        case 'medium': window.navigator.vibrate(30); break;
+        case 'success': window.navigator.vibrate([20, 50, 20]); break;
+        case 'error': window.navigator.vibrate([100, 50, 100]); break;
+      }
+    }
+  };
+
   useEffect(() => {
     async function getPasseios() {
-      // Buscamos os dados atualizados do banco
       const { data } = await supabase.from('passeios').select('*').order('id');
       if (data) setPasseios(data);
       setCarregando(false);
@@ -17,9 +28,12 @@ export default function Passeios({ destinos, setDadosEdicao }: any) {
   }, []);
 
   async function deletarPasseio(id: number, nome: string) {
+    vibrate('medium');
     if (window.confirm(`Apagar o passeio "${nome}"?`)) {
       setPasseios(passeios.filter(p => p.id !== id));
-      await supabase.from('passeios').delete().eq('id', id);
+      const { error } = await supabase.from('passeios').delete().eq('id', id);
+      if (!error) vibrate('success');
+      else vibrate('error');
     }
   }
 
@@ -50,8 +64,8 @@ export default function Passeios({ destinos, setDadosEdicao }: any) {
               <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#020617] rounded-full border border-white/10"></div>
               <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#020617] rounded-full border border-white/10"></div>
 
-              {/* Cabeçalho do Card */}
-              <div className="flex justify-between items-start mb-4 pr-12">
+              {/* Cabeçalho do Card - PR-20 evita que o título bata nos botões */}
+              <div className="flex justify-between items-start mb-4 pr-20">
                 <div className="flex-1">
                   <h2 className="text-xl font-black text-white leading-tight uppercase italic tracking-tighter">
                     {passeio.nome}
@@ -62,26 +76,32 @@ export default function Passeios({ destinos, setDadosEdicao }: any) {
                   </div>
                 </div>
 
-                {/* HORÁRIO (Só aparece se você tiver preenchido a hora real agora) */}
+                {/* HORÁRIO (Selo elegante) */}
                 {passeio.horario && passeio.horario.includes(':') && (
-                  <div className="bg-sky-500/10 px-3 py-1.5 rounded-xl border border-sky-500/20 text-sky-400 text-[10px] font-black flex items-center gap-1.5 shrink-0">
+                  <div className="bg-sky-500/10 px-3 py-1.5 rounded-xl border border-sky-500/20 text-sky-400 text-[10px] font-black flex items-center gap-1.5 shrink-0 z-10">
                     <Clock size={12} /> {passeio.horario}
                   </div>
                 )}
               </div>
 
-              {/* Botões de Ação */}
-              <div className="absolute top-6 right-6 flex gap-2">
-                <button onClick={() => setDadosEdicao({ item: passeio, tabela: 'passeios' })} className="p-2 bg-white/5 rounded-full text-slate-500 hover:text-white transition-all active:scale-75">
+              {/* Botões de Ação reposicionados lateralmente (Vertical) para não encavalar */}
+              <div className="absolute top-5 right-5 flex flex-col gap-2 z-20">
+                <button 
+                  onClick={() => { vibrate('light'); setDadosEdicao({ item: passeio, tabela: 'passeios' }); }} 
+                  className="p-2.5 bg-white/10 rounded-full text-slate-300 backdrop-blur-md border border-white/10 hover:text-white transition-all active:scale-75 shadow-lg"
+                >
                   <Edit2 size={14} />
                 </button>
-                <button onClick={() => deletarPasseio(passeio.id, passeio.nome)} className="p-2 bg-white/5 rounded-full text-slate-500 hover:text-red-400 transition-all active:scale-75">
+                <button 
+                  onClick={() => deletarPasseio(passeio.id, passeio.nome)} 
+                  className="p-2.5 bg-white/10 rounded-full text-slate-500 backdrop-blur-md border border-white/10 hover:text-red-400 transition-all active:scale-75 shadow-lg"
+                >
                   <Trash2 size={14} />
                 </button>
               </div>
 
               <div className="space-y-4">
-                {/* DICA DE COMPRA (Agora lendo o campo certo!) */}
+                {/* DICA DE COMPRA */}
                 {passeio.dica_compra && (
                   <div className="bg-white/5 p-4 rounded-[24px] border border-white/5 flex items-start gap-3 animate-in zoom-in-95 duration-300">
                     <div className="bg-sky-500/20 p-2 rounded-xl text-sky-400">
@@ -96,7 +116,7 @@ export default function Passeios({ destinos, setDadosEdicao }: any) {
                   </div>
                 )}
 
-                {/* Seção de Preço Inteligente (Evita o € duplo) */}
+                {/* Seção de Preço Inteligente */}
                 <div className="flex items-center justify-between pt-4 border-t border-dashed border-white/10">
                   <div className="flex items-center gap-2 text-slate-500">
                     <Tag size={16} />
@@ -113,7 +133,6 @@ export default function Passeios({ destinos, setDadosEdicao }: any) {
           ))
         )}
         
-        {/* Caso a lista esteja vazia */}
         {passeios.length === 0 && !carregando && (
           <div className="text-center py-20 bg-white/5 rounded-[40px] border border-dashed border-white/10 mx-6">
             <Ticket className="mx-auto text-slate-800 mb-4" size={64} />
