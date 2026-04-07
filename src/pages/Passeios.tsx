@@ -8,6 +8,7 @@ export default function Passeios({ destinos, setDadosEdicao }: any) {
 
   useEffect(() => {
     async function getPasseios() {
+      // Buscamos os dados atualizados do banco
       const { data } = await supabase.from('passeios').select('*').order('id');
       if (data) setPasseios(data);
       setCarregando(false);
@@ -39,7 +40,7 @@ export default function Passeios({ destinos, setDadosEdicao }: any) {
         {carregando ? (
           <div className="text-center py-10">
             <div className="animate-spin inline-block w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full mb-4"></div>
-            <p className="text-slate-500 font-bold">CARREGANDO TICKETS...</p>
+            <p className="text-slate-500 font-bold tracking-widest text-[10px]">CARREGANDO TICKETS...</p>
           </div>
         ) : (
           passeios.map((passeio) => (
@@ -51,7 +52,7 @@ export default function Passeios({ destinos, setDadosEdicao }: any) {
 
               {/* Cabeçalho do Card */}
               <div className="flex justify-between items-start mb-4 pr-12">
-                <div>
+                <div className="flex-1">
                   <h2 className="text-xl font-black text-white leading-tight uppercase italic tracking-tighter">
                     {passeio.nome}
                   </h2>
@@ -61,26 +62,26 @@ export default function Passeios({ destinos, setDadosEdicao }: any) {
                   </div>
                 </div>
 
-                {/* HORÁRIO EM DESTAQUE (Selo elegante) */}
-                {passeio.horario && (
-                  <div className="bg-sky-500/10 px-3 py-1.5 rounded-xl border border-sky-500/20 text-sky-400 text-[10px] font-black flex items-center gap-1.5">
+                {/* HORÁRIO (Só aparece se você tiver preenchido a hora real agora) */}
+                {passeio.horario && passeio.horario.includes(':') && (
+                  <div className="bg-sky-500/10 px-3 py-1.5 rounded-xl border border-sky-500/20 text-sky-400 text-[10px] font-black flex items-center gap-1.5 shrink-0">
                     <Clock size={12} /> {passeio.horario}
                   </div>
                 )}
               </div>
 
-              {/* Botões de Ação reposicionados */}
+              {/* Botões de Ação */}
               <div className="absolute top-6 right-6 flex gap-2">
-                <button onClick={() => setDadosEdicao({ item: passeio, tabela: 'passeios' })} className="p-2 bg-white/5 rounded-full text-slate-500 hover:text-white transition-all">
+                <button onClick={() => setDadosEdicao({ item: passeio, tabela: 'passeios' })} className="p-2 bg-white/5 rounded-full text-slate-500 hover:text-white transition-all active:scale-75">
                   <Edit2 size={14} />
                 </button>
-                <button onClick={() => deletarPasseio(passeio.id, passeio.nome)} className="p-2 bg-white/5 rounded-full text-slate-500 hover:text-red-400 transition-all">
+                <button onClick={() => deletarPasseio(passeio.id, passeio.nome)} className="p-2 bg-white/5 rounded-full text-slate-500 hover:text-red-400 transition-all active:scale-75">
                   <Trash2 size={14} />
                 </button>
               </div>
 
               <div className="space-y-4">
-                {/* DICA DE COMPRA (Só aparece se houver texto) */}
+                {/* DICA DE COMPRA (Agora lendo o campo certo!) */}
                 {passeio.dica_compra && (
                   <div className="bg-white/5 p-4 rounded-[24px] border border-white/5 flex items-start gap-3 animate-in zoom-in-95 duration-300">
                     <div className="bg-sky-500/20 p-2 rounded-xl text-sky-400">
@@ -95,7 +96,7 @@ export default function Passeios({ destinos, setDadosEdicao }: any) {
                   </div>
                 )}
 
-                {/* Seção de Preço */}
+                {/* Seção de Preço Inteligente (Evita o € duplo) */}
                 <div className="flex items-center justify-between pt-4 border-t border-dashed border-white/10">
                   <div className="flex items-center gap-2 text-slate-500">
                     <Tag size={16} />
@@ -103,7 +104,7 @@ export default function Passeios({ destinos, setDadosEdicao }: any) {
                   </div>
                   <div className="text-right">
                     <span className="text-2xl font-black text-emerald-400 tracking-tighter leading-none">
-                      € {passeio.preco || '0,00'}
+                      {passeio.preco?.includes('€') ? passeio.preco : `€ ${passeio.preco || '0,00'}`}
                     </span>
                   </div>
                 </div>
@@ -112,10 +113,11 @@ export default function Passeios({ destinos, setDadosEdicao }: any) {
           ))
         )}
         
+        {/* Caso a lista esteja vazia */}
         {passeios.length === 0 && !carregando && (
-          <div className="text-center py-20 bg-white/5 rounded-[40px] border border-dashed border-white/10 mx-4">
+          <div className="text-center py-20 bg-white/5 rounded-[40px] border border-dashed border-white/10 mx-6">
             <Ticket className="mx-auto text-slate-800 mb-4" size={64} />
-            <p className="text-slate-600 font-black uppercase tracking-widest text-xs">Nenhum ticket emitido</p>
+            <p className="text-slate-600 font-black uppercase tracking-widest text-[10px]">Nenhum ticket emitido</p>
           </div>
         )}
       </main>
